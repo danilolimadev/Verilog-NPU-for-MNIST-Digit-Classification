@@ -1,10 +1,11 @@
 from tensorflow.keras.datasets import mnist
 import numpy as np
+import matplotlib.pyplot as plt
 
 # =========================
 # ESCOLHA AQUI
 # =========================
-INDEX = 10   # 🔥 MUDE ISSO PRA TESTAR
+INDEX = 10  # 🔥 MUDE PARA TESTAR
 
 # =========================
 # CARREGAR MNIST
@@ -14,21 +15,48 @@ INDEX = 10   # 🔥 MUDE ISSO PRA TESTAR
 img = x_train[INDEX]
 label = y_train[INDEX]
 
+print("===================================")
 print(f"Imagem escolhida: {INDEX}")
 print(f"Label real: {label}")
+print("===================================")
 
 # =========================
-# NORMALIZAÇÃO (IMPORTANTE)
+# NORMALIZAÇÃO CORRETA
 # =========================
-img = (img / 16).astype(int)
+# 🔥 NÃO ESCALAR MAIS!
+img = img.astype(int)
+
+# =========================
+# DEBUG (CRÍTICO)
+# =========================
+print("Min pixel:", img.min())
+print("Max pixel:", img.max())
+
+if img.max() <= 15:
+    print("❌ ERRO: imagem ainda está em escala 0–15")
+else:
+    print("✅ Escala correta (0–255)")
+
+# =========================
+# MOSTRAR IMAGEM (opcional)
+# =========================
+plt.imshow(img, cmap='gray')
+plt.title(f"Label: {label}")
+plt.show()
+
+# =========================
+# FLATTEN
+# =========================
+flat = img.flatten()
+
+print("\nPrimeiros 20 valores:")
+print(flat[:20])
 
 # =========================
 # SALVAR .mem
 # =========================
-flat = img.flatten()
-
 with open("../data/input.mem", "w") as f:
     for val in flat:
         f.write(f"{val:02x}\n")
 
-print("input.mem atualizado!")
+print("\n✅ input.mem atualizado com sucesso!")
