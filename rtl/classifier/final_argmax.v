@@ -3,7 +3,15 @@ module final_argmax (
     input rst,
     input start,
 
-    input [4:0] pair_results,   // resultados da layer1
+    // scores dos 5 pares (valores reais)
+    input [15:0] score0,
+    input [15:0] score1,
+    input [15:0] score2,
+    input [15:0] score3,
+    input [15:0] score4,
+
+    // bits indicando qual neurônio venceu no par
+    input [4:0] pair_results,
 
     output reg done,
     output reg [3:0] digit
@@ -14,6 +22,10 @@ module final_argmax (
     parameter IDLE = 0,
               COMPUTE = 1,
               DONE_STATE = 2;
+
+    // variáveis internas
+    reg [15:0] max_val;
+    reg [3:0]  max_digit;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -30,14 +42,35 @@ module final_argmax (
                 end
 
                 COMPUTE: begin
-                    // lógica simples (árvore manual)
-                    if (pair_results[4]) digit <= 9;
-                    else if (pair_results[3]) digit <= 7;
-                    else if (pair_results[2]) digit <= 5;
-                    else if (pair_results[1]) digit <= 3;
-                    else if (pair_results[0]) digit <= 1;
-                    else digit <= 0;
+                    // inicializa com primeiro par
+                    max_val <= score0;
+                    max_digit <= (pair_results[0]) ? 1 : 0;
 
+                    // compara par 1 (2 vs 3)
+                    if (score1 > max_val) begin
+                        max_val <= score1;
+                        max_digit <= (pair_results[1]) ? 3 : 2;
+                    end
+
+                    // compara par 2 (4 vs 5)
+                    if (score2 > max_val) begin
+                        max_val <= score2;
+                        max_digit <= (pair_results[2]) ? 5 : 4;
+                    end
+
+                    // compara par 3 (6 vs 7)
+                    if (score3 > max_val) begin
+                        max_val <= score3;
+                        max_digit <= (pair_results[3]) ? 7 : 6;
+                    end
+
+                    // compara par 4 (8 vs 9)
+                    if (score4 > max_val) begin
+                        max_val <= score4;
+                        max_digit <= (pair_results[4]) ? 9 : 8;
+                    end
+
+                    digit <= max_digit;
                     state <= DONE_STATE;
                 end
 

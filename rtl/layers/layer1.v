@@ -4,83 +4,139 @@ module layer1 (
     input start,
 
     output reg done,
+    output reg [4:0] pair_results,
 
-    // resultado: 5 pares → cada um retorna 0 ou 1
-    output reg [4:0] pair_results
+    // 🔥 NOVO: scores dos vencedores
+    output [15:0] score0,
+    output [15:0] score1,
+    output [15:0] score2,
+    output [15:0] score3,
+    output [15:0] score4
 );
 
     // =========================
-    // controle
+    // sinais dos 5 pares
     // =========================
-    reg [2:0] state;
-    reg [2:0] pair_index;
+    reg start_all;
 
-    parameter IDLE  = 0,
-              START_NEURON = 1,
-              WAIT_NEURON  = 2,
-              STORE_RESULT = 3,
-              DONE_STATE   = 4;
+    wire done0, done1, done2, done3, done4;
+    wire [7:0] res0, res1, res2, res3, res4;
 
     // =========================
-    // neuron unit
+    // 5 pares (10 neurônios)
     // =========================
-    reg neuron_start;
-    wire neuron_done;
-    wire [7:0] neuron_result;
 
-    neuron_pair_unit neuron (
-        .clk(clk),
-        .rst(rst),
-        .start(neuron_start),
-        .done(neuron_done),
-        .result(neuron_result),
-        .state_debug() // ignorar
+    neuron_pair_unit #(
+        .WFILE0("data/weights_n0.mem"),
+        .WFILE1("data/weights_n1.mem"),
+        .BIAS_ID0(0),
+        .BIAS_ID1(1)
+    ) pair0 (
+        .clk(clk), .rst(rst), .start(start_all),
+        .done(done0), .result(res0), .state_debug()
+    );
+
+    neuron_pair_unit #(
+        .WFILE0("data/weights_n2.mem"),
+        .WFILE1("data/weights_n3.mem"),
+        .BIAS_ID0(2),
+        .BIAS_ID1(3)
+    ) pair1 (
+        .clk(clk), .rst(rst), .start(start_all),
+        .done(done1), .result(res1), .state_debug()
+    );
+
+    neuron_pair_unit #(
+        .WFILE0("data/weights_n4.mem"),
+        .WFILE1("data/weights_n5.mem"),
+        .BIAS_ID0(4),
+        .BIAS_ID1(5)
+    ) pair2 (
+        .clk(clk), .rst(rst), .start(start_all),
+        .done(done2), .result(res2), .state_debug()
+    );
+
+    neuron_pair_unit #(
+        .WFILE0("data/weights_n6.mem"),
+        .WFILE1("data/weights_n7.mem"),
+        .BIAS_ID0(6),
+        .BIAS_ID1(7)
+    ) pair3 (
+        .clk(clk), .rst(rst), .start(start_all),
+        .done(done3), .result(res3), .state_debug()
+    );
+
+    neuron_pair_unit #(
+        .WFILE0("data/weights_n8.mem"),
+        .WFILE1("data/weights_n9.mem"),
+        .BIAS_ID0(8),
+        .BIAS_ID1(9)
+    ) pair4 (
+        .clk(clk), .rst(rst), .start(start_all),
+        .done(done4), .result(res4), .state_debug()
     );
 
     // =========================
-    // FSM
+    // 🔥 SCORES (IMPORTANTE)
     // =========================
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    assign score0 = {8'd0, res0};
+    assign score1 = {8'd0, res1};
+    assign score2 = {8'd0, res2};
+    assign score3 = {8'd0, res3};
+    assign score4 = {8'd0, res4};
+
+    // =========================
+    // FSM simples
+    // =========================
+    reg [1:0] state;
+
+    parameter IDLE = 0,
+              RUN  = 1,
+              DONE_STATE = 2;
+
+    always @(posedge clk or posedge rst)
+    begin
+        if (rst)
+        begin
             state <= IDLE;
-            pair_index <= 0;
             done <= 0;
-            neuron_start <= 0;
+            start_all <= 0;
             pair_results <= 0;
-        end else begin
+        end
+        else
+        begin
             case (state)
 
-                IDLE: begin
+                IDLE:
+                begin
                     done <= 0;
-                    if (start) begin
-                        pair_index <= 0;
-                        state <= START_NEURON;
+                    start_all <= 0;
+
+                    if (start)
+                    begin
+                        start_all <= 1;
+                        state <= RUN;
                     end
                 end
 
-                START_NEURON: begin
-                    neuron_start <= 1;
-                    state <= WAIT_NEURON;
-                end
+                RUN:
+                begin
+                    start_all <= 0;
 
-                WAIT_NEURON: begin
-                    neuron_start <= 0;
-                    if (neuron_done)
-                        state <= STORE_RESULT;
-                end
+                    if (done0 && done1 && done2 && done3 && done4)
+                    begin
+                        pair_results[0] <= res0[0];
+                        pair_results[1] <= res1[0];
+                        pair_results[2] <= res2[0];
+                        pair_results[3] <= res3[0];
+                        pair_results[4] <= res4[0];
 
-                STORE_RESULT: begin
-                    pair_results[pair_index] <= neuron_result[0]; // só 0 ou 1
-
-                    if (pair_index == 4)
                         state <= DONE_STATE;
-                    else begin
-                        pair_index <= pair_index + 1;
-                        state <= START_NEURON;
                     end
                 end
 
-                DONE_STATE: begin
+                DONE_STATE:
+                begin
                     done <= 1;
                     state <= IDLE;
                 end

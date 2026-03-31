@@ -1,4 +1,9 @@
-module neuron_pair_unit (
+module neuron_pair_unit #(
+    parameter WFILE0 = "data/weights_n0.mem",
+    parameter WFILE1 = "data/weights_n1.mem",
+    parameter BIAS_ID0 = 0,
+    parameter BIAS_ID1 = 1
+)(
     input clk,
     input rst,
     input start,
@@ -25,6 +30,9 @@ module neuron_pair_unit (
     wire [15:0] CON_SIG = 0;
     wire FIFO_FULL, FIFO_EMPTY;
 
+    wire [7:0] bias0;
+    wire [7:0] bias1;
+
     // =========================
     // memória
     // =========================
@@ -40,13 +48,14 @@ module neuron_pair_unit (
         .data(input_data)
     );
 
-    weight_memory #(.FILE("data/weights_n0.mem")) W0 (
+    // 🔥 agora parametrizado
+    weight_memory #(.FILE(WFILE0)) W0 (
         .clk(clk),
         .addr(addr),
         .data(weight_n0)
     );
 
-    weight_memory #(.FILE("data/weights_n1.mem")) W1 (
+    weight_memory #(.FILE(WFILE1)) W1 (
         .clk(clk),
         .addr(addr),
         .data(weight_n1)
@@ -65,13 +74,25 @@ module neuron_pair_unit (
         .DB(DB),
         .DC(DC),
         .DD(DD),
-        .BIAS_IN(0),
+        .BIAS_IN(bias0),
         .D_OUT(D_OUT),
         .FIFO_FULL(FIFO_FULL),
         .FIFO_EMPTY(FIFO_EMPTY),
         .BUSY(BUSY),
         .DONE(DONE),
         .STATE_DEBUG(state_debug)
+    );
+
+    bias_memory BM0 (
+        .clk(clk),
+        .addr(BIAS_ID0),
+        .data(bias0)
+    );
+
+    bias_memory BM1 (
+        .clk(clk),
+        .addr(BIAS_ID1),
+        .data(bias1)
     );
 
     // =========================
@@ -90,7 +111,7 @@ module neuron_pair_unit (
     end
 
     // =========================
-    // FSM (controle 784 ciclos)
+    // FSM (784 ciclos)
     // =========================
     reg [2:0] state;
 
@@ -121,7 +142,7 @@ module neuron_pair_unit (
                 end
 
                 LOAD: begin
-                    start_pulse <= 1;   // pulso de start
+                    start_pulse <= 1;
                     state <= WAIT_NPU;
                 end
 
