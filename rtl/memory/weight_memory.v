@@ -1,4 +1,6 @@
-module weight_memory (
+module weight_memory #(
+    parameter FILE = "data/weights.mem"
+)(
     input clk,
     input [9:0] addr,
     output reg [7:0] data
@@ -6,20 +8,11 @@ module weight_memory (
 
     reg [7:0] mem [0:1023];
 
-    /*initial begin
-        // pesos exemplo
-        mem[0] = 1;
-        mem[1] = 1;
-        mem[2] = 1;
-        mem[3] = 1;
-    end*/
-
     initial begin
-        $readmemh("data/weights.mem", mem); //TODO: Provavelmente vai ter que colocar o definitivo aqui
+        $readmemh(FILE, mem);
     end
 
-    always @(posedge clk) begin
+    always @(posedge clk)
         data <= mem[addr];
-    end
 
 endmodule
