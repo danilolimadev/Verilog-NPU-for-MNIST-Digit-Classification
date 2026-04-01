@@ -5,18 +5,16 @@ module mac_module (
     input  [7:0] BIAS_IN,
     input  [7:0] A,              
     input  signed [7:0] B,       
-    output reg signed [15:0] Y
+    output reg signed [31:0] Y
 );
 
     // =========================
     // EXTENSÕES
     // =========================
-    wire signed [15:0] A_ext = $signed({8'd0, A});
-    wire signed [15:0] B_ext = B;
-
-    wire signed [15:0] mult_out = A_ext * B_ext;
-
-    wire signed [15:0] bias_ext = {{8{BIAS_IN[7]}}, BIAS_IN};
+    wire signed [31:0] A_ext = $signed({24'd0, A});
+    wire signed [31:0] B_ext = B;
+    wire signed [31:0] mult_out = A_ext * B_ext;
+    wire signed [31:0] bias_ext = {{24{BIAS_IN[7]}}, BIAS_IN};
 
     // =========================
     // REGISTRADOR
@@ -27,7 +25,8 @@ module mac_module (
         end 
         else if (EN_MAC) begin
             // 🔥 soma direta no clock
-            Y <= saturate(Y + mult_out);
+            //Y <= saturate(Y + mult_out);
+            Y <= Y + mult_out;
         end
     end
 

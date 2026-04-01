@@ -4,19 +4,17 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
 
 # =========================
-# 1. Carregar MNIST
+# LOAD
 # =========================
 (x_train, y_train), _ = mnist.load_data()
-
-# 🔥 CORREÇÃO: NÃO NORMALIZAR (hardware usa 0–255)
 x_train = x_train.astype(np.float32)
 
 # =========================
-# 2. Modelo (ALINHADO COM HARDWARE)
+# MODELO CORRETO
 # =========================
 model = Sequential([
     Flatten(input_shape=(28, 28)),
-    Dense(10, activation='relu')  # igual ao hardware
+    Dense(10, activation=None)  # 🔥 SEM RELU
 ])
 
 model.compile(
@@ -25,68 +23,42 @@ model.compile(
     metrics=['accuracy']
 )
 
-print("\nTreinando modelo...")
+print("Treinando...")
 model.fit(x_train, y_train, epochs=5)
 
 # =========================
-# 3. Extrair pesos
+# PESOS
 # =========================
 weights, bias = model.layers[1].get_weights()
 
-print("\nPesos float (exemplo):")
-print(weights[:5, :3])
-
-print("\nBias float:")
-print(bias)
-
 # =========================
-# 4. QUANTIZAÇÃO CORRETA
+# QUANTIZAÇÃO MELHOR
 # =========================
-# 🔥 CORREÇÃO PRINCIPAL
-SCALE = 64
+SCALE = 32
 
 weights_q = np.clip(weights * SCALE, -128, 127).astype(np.int8)
 bias_q = np.clip(bias * SCALE, -128, 127).astype(np.int8)
 
-print("\nPesos quantizados (exemplo):")
-print(weights_q[:5, :3])
-
-print("\nBias quantizado:")
-print(bias_q)
-
 # =========================
-# 5. EXPORTAR PESOS
+# EXPORT
 # =========================
-print("\nSalvando arquivos .mem...")
-
 for n in range(10):
     with open(f"../data/weights_n{n}.mem", "w") as f:
         for i in range(784):
-            val = weights_q[i][n]
-            f.write(f"{val & 0xff:02x}\n")
+            f.write(f"{weights_q[i][n] & 0xff:02x}\n")
 
-# =========================
-# 6. EXPORTAR BIAS
-# =========================
 with open("../data/bias.mem", "w") as f:
     for b in bias_q:
         f.write(f"{b & 0xff:02x}\n")
 
-print("✅ Pesos e bias exportados com sucesso!")
+print("OK!")
 
 # =========================
-# 7. TESTE RÁPIDO NO PYTHON
+# TESTE
 # =========================
 idx = 10
-
-# 🔥 IMPORTANTE: usar mesma escala do hardware
 img = x_train[idx].reshape(1, 28, 28)
 
 pred = model.predict(img)
-digit = np.argmax(pred)
-
-print("\n===================================")
-print(f"Teste rápido com índice {idx}")
-print(f"Label real: {y_train[idx]}")
-print(f"Predição: {digit}")
-print("===================================")
+print("Real:", y_train[idx])
+print("Pred:", np.argmax(pred))

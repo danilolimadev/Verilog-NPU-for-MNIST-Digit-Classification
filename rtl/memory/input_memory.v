@@ -7,7 +7,7 @@ module input_memory (
     reg [7:0] mem [0:1023];
 
     initial begin
-        $readmemh("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/input.mem", mem); //TODO: PROVAVELMENTE VAI TER QUE COLOCAR O DEFINITIVO AQUI
+        $readmemh("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/input_9.mem", mem); //TODO: PROVAVELMENTE VAI TER QUE COLOCAR O DEFINITIVO AQUI
     end
 
     always @(posedge clk) begin
