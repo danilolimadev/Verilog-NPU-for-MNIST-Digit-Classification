@@ -27,7 +27,9 @@ module npu_top (
     // status
     output wire        BUSY,
     output wire        DONE,
-    output wire [3:0]  STATE_DEBUG
+    output wire [3:0]  STATE_DEBUG,
+    output [15:0] MAC0_OUT,
+    output [15:0] MAC1_OUT
 );
 
     // Instanciar o módulo FSM principal
@@ -47,7 +49,9 @@ module npu_top (
         .FIFO_EMPTY(FIFO_EMPTY),
         .BUSY(BUSY),
         .DONE(DONE),
-        .STATE_DEBUG(STATE_DEBUG)
+        .STATE_DEBUG(STATE_DEBUG),
+        .MAC0_OUT(MAC0_OUT),
+        .MAC1_OUT(MAC1_OUT)
     );
 
 endmodule

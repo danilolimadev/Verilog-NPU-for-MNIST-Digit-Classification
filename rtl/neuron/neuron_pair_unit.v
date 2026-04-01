@@ -1,4 +1,5 @@
 module neuron_pair_unit #(
+    parameter INPUT_FILE = "data/input_0.mem",
     parameter WFILE0 = "data/weights_n0.mem",
     parameter WFILE1 = "data/weights_n1.mem",
     parameter BIAS_ID0 = 0,
@@ -57,7 +58,10 @@ module neuron_pair_unit #(
     wire [7:0] weight_n0;
     wire [7:0] weight_n1;
 
-    input_memory IM (
+    wire [15:0] MAC0_OUT;
+    wire [15:0] MAC1_OUT;
+
+    input_memory #(.INPUT_FILE(INPUT_FILE)) IM (
         .clk(clk),
         .addr(addr),
         .data(input_data)
@@ -94,7 +98,9 @@ module neuron_pair_unit #(
         .FIFO_EMPTY(FIFO_EMPTY),
         .BUSY(BUSY),
         .DONE(DONE),
-        .STATE_DEBUG(state_debug)
+        .STATE_DEBUG(state_debug),
+        .MAC0_OUT(MAC0_OUT),
+        .MAC1_OUT(MAC1_OUT)
     );
 
     bias_memory BM0 (
@@ -180,11 +186,8 @@ module neuron_pair_unit #(
 
                     if (DONE) begin
                         // 🔥 ACUMULA RESULTADO
-                        acc0 <= acc0 + D_OUT;
-
-                        // ⚠️ TEMPORÁRIO:
-                        // sua NPU só expõe 1 saída → duplicando
-                        acc1 <= acc1 + D_OUT;
+                        acc0 <= acc0 + MAC0_OUT;
+                        acc1 <= acc1 + MAC1_OUT;
 
                         state <= NEXT;
                     end

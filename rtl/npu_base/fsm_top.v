@@ -18,7 +18,9 @@ module npu_fsm_top (
 
     output reg BUSY,
     output reg DONE,
-    output reg [3:0] STATE_DEBUG
+    output reg [3:0] STATE_DEBUG,
+    output [15:0] MAC0_OUT,
+    output [15:0] MAC1_OUT
 );
 
   parameter IDLE         = 4'd0;
@@ -106,7 +108,10 @@ module npu_fsm_top (
 
   assign OUT0 = ReLU0_OUT;
   assign OUT1 = ReLU1_OUT;
-  assign D_OUT = digit_reg;
+  assign D_OUT = MAC0_Y[7:0]; // ou MAC1 dependendo do caso
+
+  assign MAC0_OUT = MAC0_Y;
+  assign MAC1_OUT = MAC1_Y;
 
   // ==============================
   // START EDGE

@@ -1,4 +1,6 @@
-module input_memory (
+module input_memory #(
+    parameter INPUT_FILE = "data/input_0.mem"
+)(
     input clk,
     input [9:0] addr,
     output reg [7:0] data
@@ -7,7 +9,8 @@ module input_memory (
     reg [7:0] mem [0:1023];
 
     initial begin
-        $readmemh("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/input_9.mem", mem); //TODO: PROVAVELMENTE VAI TER QUE COLOCAR O DEFINITIVO AQUI
+        $display("Loading input file: %s", INPUT_FILE);
+        $readmemh(INPUT_FILE, mem);
     end
 
     always @(posedge clk) begin
