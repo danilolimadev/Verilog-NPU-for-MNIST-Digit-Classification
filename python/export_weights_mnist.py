@@ -8,8 +8,8 @@ from tensorflow.keras.layers import Dense, Flatten
 # =========================
 (x_train, y_train), _ = mnist.load_data()
 
-# 🔥 NORMALIZAÇÃO (IMPORTANTE)
-x_train = x_train.astype(np.float32) / 255.0
+# 🔥 IMPORTANTE: SEM NORMALIZAÇÃO (0–255 igual hardware)
+x_train = x_train.astype(np.float32)
 
 print("Dataset carregado")
 print("Min:", x_train.min(), "Max:", x_train.max())
@@ -43,9 +43,9 @@ print("\nBias float:")
 print(bias)
 
 # =========================
-# 4. QUANTIZAÇÃO (ALINHADA)
+# 4. QUANTIZAÇÃO (ALINHADA AO HW)
 # =========================
-SCALE = 32  # 🔥 melhor estabilidade
+SCALE = 64  # 🔥 melhor match com entrada 0–255
 
 weights_q = np.round(weights * SCALE)
 bias_q = np.round(bias * SCALE)
@@ -95,18 +95,17 @@ print("Real:", y_train[idx])
 print("Pred:", digit)
 
 # =========================
-# 8. TESTE QUANTIZADO (SIMULA HW 🔥)
+# 8. TESTE QUANTIZADO (SIMULA HW)
 # =========================
 flat = x_train[idx].flatten()
 
-# 🔥 SIMULA HARDWARE
 acc = np.zeros(10)
 
 for i in range(784):
     for n in range(10):
         acc[n] += flat[i] * weights_q[i][n]
 
-# aplica bias
+# adiciona bias
 acc += bias_q
 
 digit_q = np.argmax(acc)
