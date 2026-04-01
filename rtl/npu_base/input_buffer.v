@@ -7,7 +7,7 @@ module input_buffer (
 );
 
     always @(posedge CLKEXT or negedge CLR_BUF_IN) begin
-        if (!CLR_BUF_IN) begin
+        if (CLR_BUF_IN) begin
             QA <= 8'd0;
             QB <= 8'd0;
             QC <= 8'd0;

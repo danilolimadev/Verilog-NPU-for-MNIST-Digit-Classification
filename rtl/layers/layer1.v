@@ -27,8 +27,8 @@ module layer1 (
     // =========================
 
     neuron_pair_unit #(
-        .WFILE0("data/weights_n0.mem"),
-        .WFILE1("data/weights_n1.mem"),
+        .WFILE0("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n0.mem"),
+        .WFILE1("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n1.mem"),
         .BIAS_ID0(0),
         .BIAS_ID1(1)
     ) pair0 (
@@ -37,8 +37,8 @@ module layer1 (
     );
 
     neuron_pair_unit #(
-        .WFILE0("data/weights_n2.mem"),
-        .WFILE1("data/weights_n3.mem"),
+        .WFILE0("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n2.mem"),
+        .WFILE1("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n3.mem"),
         .BIAS_ID0(2),
         .BIAS_ID1(3)
     ) pair1 (
@@ -47,8 +47,8 @@ module layer1 (
     );
 
     neuron_pair_unit #(
-        .WFILE0("data/weights_n4.mem"),
-        .WFILE1("data/weights_n5.mem"),
+        .WFILE0("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n4.mem"),
+        .WFILE1("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n5.mem"),
         .BIAS_ID0(4),
         .BIAS_ID1(5)
     ) pair2 (
@@ -57,8 +57,8 @@ module layer1 (
     );
 
     neuron_pair_unit #(
-        .WFILE0("data/weights_n6.mem"),
-        .WFILE1("data/weights_n7.mem"),
+        .WFILE0("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n6.mem"),
+        .WFILE1("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n7.mem"),
         .BIAS_ID0(6),
         .BIAS_ID1(7)
     ) pair3 (
@@ -67,8 +67,8 @@ module layer1 (
     );
 
     neuron_pair_unit #(
-        .WFILE0("data/weights_n8.mem"),
-        .WFILE1("data/weights_n9.mem"),
+        .WFILE0("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n8.mem"),
+        .WFILE1("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights_n9.mem"),
         .BIAS_ID0(8),
         .BIAS_ID1(9)
     ) pair4 (
@@ -130,6 +130,14 @@ module layer1 (
                         pair_results[2] <= res2[0];
                         pair_results[3] <= res3[0];
                         pair_results[4] <= res4[0];
+
+                        $display("\n===== DEBUG LAYER1 =====");
+                        $display("res0 = %d", res0);
+                        $display("res1 = %d", res1);
+                        $display("res2 = %d", res2);
+                        $display("res3 = %d", res3);
+                        $display("res4 = %d", res4);
+                        $display("========================\n");
 
                         state <= DONE_STATE;
                     end

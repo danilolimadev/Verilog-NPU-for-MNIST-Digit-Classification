@@ -43,7 +43,7 @@ print(bias)
 # 4. QUANTIZAÇÃO CORRETA
 # =========================
 # 🔥 Ajuste crítico: compensar entrada 0–255 do hardware
-SCALE = 64 / 255.0
+SCALE = 127  # 🔥 CORRETO
 
 weights_q = np.clip(weights * SCALE, -128, 127).astype(np.int8)
 bias_q = np.clip(bias * SCALE, -128, 127).astype(np.int8)

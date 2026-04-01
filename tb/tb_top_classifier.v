@@ -40,8 +40,8 @@ module tb_top_classifier;
         $display(" TESTE CLASSIFICADOR MNIST (REAL)");
         $display("======================================");
 
-        $monitor("T=%0t | DONE=%b | DIGIT=%d | CYCLES=%d",
-                 $time, done, digit, cycle_count);
+        /*$monitor("T=%0t | DONE=%b | DIGIT=%d | CYCLES=%d",
+                 $time, done, digit, cycle_count);*/
     end
 
     // =========================

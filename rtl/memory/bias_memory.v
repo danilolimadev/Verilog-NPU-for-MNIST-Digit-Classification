@@ -1,5 +1,5 @@
 module bias_memory #(
-    parameter FILE = "data/bias.mem"
+    parameter FILE = "E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/bias.mem"
 )(
     input clk,
     input [3:0] addr,     // 10 neurônios → 4 bits

@@ -1,5 +1,5 @@
 module weight_memory #(
-    parameter FILE = "data/weights.mem"
+    parameter FILE = "E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights.mem"
 )(
     input clk,
     input [9:0] addr,
