@@ -4,22 +4,20 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
 
 # =========================
-# 1. LOAD DATA
+# LOAD
 # =========================
 (x_train, y_train), _ = mnist.load_data()
 
-# 🔥 IMPORTANTE: SEM NORMALIZAÇÃO (0–255 igual hardware)
+# 🔥 SEM NORMALIZAÇÃO (igual hardware)
 x_train = x_train.astype(np.float32)
 
-print("Dataset carregado")
-print("Min:", x_train.min(), "Max:", x_train.max())
-
 # =========================
-# 2. MODELO (ALINHADO COM HW)
+# MODELO MELHORADO
 # =========================
 model = Sequential([
     Flatten(input_shape=(28, 28)),
-    Dense(10, activation='linear')  # 🔥 SEM RELU
+    Dense(32, activation='relu'),   # 🔥 NOVO
+    Dense(10, activation='linear')
 ])
 
 model.compile(
@@ -28,90 +26,42 @@ model.compile(
     metrics=['accuracy']
 )
 
-print("\nTreinando modelo...")
+print("Treinando...")
 model.fit(x_train, y_train, epochs=5)
 
 # =========================
-# 3. EXTRAIR PESOS
+# PEGAR APENAS ÚLTIMA CAMADA
 # =========================
-weights, bias = model.layers[1].get_weights()
-
-print("\nPesos float (amostra):")
-print(weights[:5, :3])
-
-print("\nBias float:")
-print(bias)
+weights, bias = model.layers[2].get_weights()
 
 # =========================
-# 4. QUANTIZAÇÃO (ALINHADA AO HW)
+# QUANTIZAÇÃO
 # =========================
-SCALE = 64  # 🔥 melhor match com entrada 0–255
+SCALE = 64
 
-weights_q = np.round(weights * SCALE)
-bias_q = np.round(bias * SCALE)
-
-weights_q = np.clip(weights_q, -128, 127).astype(np.int8)
-bias_q = np.clip(bias_q, -128, 127).astype(np.int8)
-
-print("\nPesos quantizados (amostra):")
-print(weights_q[:5, :3])
-
-print("\nBias quantizado:")
-print(bias_q)
+weights_q = np.clip(np.round(weights * SCALE), -128, 127).astype(np.int8)
+bias_q = np.clip(np.round(bias * SCALE), -128, 127).astype(np.int8)
 
 # =========================
-# 5. EXPORTAR PESOS
+# EXPORT
 # =========================
-print("\nSalvando weights...")
-
 for n in range(10):
     with open(f"../data/weights_n{n}.mem", "w") as f:
-        for i in range(784):
-            val = weights_q[i][n]
-            f.write(f"{val & 0xff:02x}\n")
-
-# =========================
-# 6. EXPORTAR BIAS
-# =========================
-print("Salvando bias...")
+        for i in range(weights_q.shape[0]):  # agora 32
+            f.write(f"{weights_q[i][n] & 0xff:02x}\n")
 
 with open("../data/bias.mem", "w") as f:
     for b in bias_q:
         f.write(f"{b & 0xff:02x}\n")
 
-print("✅ Pesos e bias exportados!")
+print("OK!")
 
 # =========================
-# 7. TESTE FLOAT (REFERÊNCIA)
+# TESTE
 # =========================
 idx = 10
 img = x_train[idx].reshape(1, 28, 28)
 
 pred = model.predict(img)
-digit = np.argmax(pred)
-
-print("\n==== TESTE FLOAT ====")
 print("Real:", y_train[idx])
-print("Pred:", digit)
-
-# =========================
-# 8. TESTE QUANTIZADO (SIMULA HW)
-# =========================
-flat = x_train[idx].flatten()
-
-acc = np.zeros(10)
-
-for i in range(784):
-    for n in range(10):
-        acc[n] += flat[i] * weights_q[i][n]
-
-# adiciona bias
-acc += bias_q
-
-digit_q = np.argmax(acc)
-
-print("\n==== TESTE QUANTIZADO (HW SIM) ====")
-print("Pred:", digit_q)
-print("Scores:", acc.astype(int))
-
-print("\n===================================")
+print("Pred:", np.argmax(pred))
