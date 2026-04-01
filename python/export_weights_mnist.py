@@ -8,15 +8,14 @@ from tensorflow.keras.layers import Dense, Flatten
 # =========================
 (x_train, y_train), _ = mnist.load_data()
 
-# 🔥 SEM NORMALIZAÇÃO (igual hardware)
+# 🔥 SEM NORMALIZAÇÃO (0–255)
 x_train = x_train.astype(np.float32)
 
 # =========================
-# MODELO MELHORADO
+# MODELO (COMPATÍVEL COM HW)
 # =========================
 model = Sequential([
     Flatten(input_shape=(28, 28)),
-    Dense(32, activation='relu'),   # 🔥 NOVO
     Dense(10, activation='linear')
 ])
 
@@ -27,17 +26,17 @@ model.compile(
 )
 
 print("Treinando...")
-model.fit(x_train, y_train, epochs=5)
+model.fit(x_train, y_train, epochs=20)  # 🔥 MAIS ÉPOCAS
 
 # =========================
-# PEGAR APENAS ÚLTIMA CAMADA
+# PESOS
 # =========================
-weights, bias = model.layers[2].get_weights()
+weights, bias = model.layers[1].get_weights()
 
 # =========================
 # QUANTIZAÇÃO
 # =========================
-SCALE = 64
+SCALE = 32  # 🔥 MENOR (menos saturação)
 
 weights_q = np.clip(np.round(weights * SCALE), -128, 127).astype(np.int8)
 bias_q = np.clip(np.round(bias * SCALE), -128, 127).astype(np.int8)
@@ -47,7 +46,7 @@ bias_q = np.clip(np.round(bias * SCALE), -128, 127).astype(np.int8)
 # =========================
 for n in range(10):
     with open(f"../data/weights_n{n}.mem", "w") as f:
-        for i in range(weights_q.shape[0]):  # agora 32
+        for i in range(784):
             f.write(f"{weights_q[i][n] & 0xff:02x}\n")
 
 with open("../data/bias.mem", "w") as f:
@@ -55,13 +54,3 @@ with open("../data/bias.mem", "w") as f:
         f.write(f"{b & 0xff:02x}\n")
 
 print("OK!")
-
-# =========================
-# TESTE
-# =========================
-idx = 10
-img = x_train[idx].reshape(1, 28, 28)
-
-pred = model.predict(img)
-print("Real:", y_train[idx])
-print("Pred:", np.argmax(pred))
