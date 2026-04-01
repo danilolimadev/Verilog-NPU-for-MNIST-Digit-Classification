@@ -7,7 +7,7 @@ module piso_out (
     input  wire [15:0] mac0_out,
     input  wire [15:0] mac1_out,
     output reg  [7:0]  D_OUT
-  );
+);
 
   reg [31:0] shift_reg;
 
@@ -27,12 +27,14 @@ module piso_out (
     begin
       if (!SHIFT_OUT)
       begin
+        // 🔥 LOAD + PRIMEIRO BYTE
         shift_reg <= {mac0_out, mac1_out};
+        D_OUT     <= mac0_out[15:8];  // AB já sai aqui
       end
       else
       begin
-        D_OUT     <= shift_reg[31:24];
         shift_reg <= {shift_reg[23:0], 8'b0};
+        D_OUT     <= shift_reg[23:16];
       end
     end
   end

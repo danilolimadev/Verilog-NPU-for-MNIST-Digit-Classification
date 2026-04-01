@@ -8,15 +8,15 @@ from tensorflow.keras.layers import Dense, Flatten
 # =========================
 (x_train, y_train), _ = mnist.load_data()
 
-# 🔥 Normalização (igual ao treino original)
-x_train = x_train / 255.0
+# 🔥 CORREÇÃO: NÃO NORMALIZAR (hardware usa 0–255)
+x_train = x_train.astype(np.float32)
 
 # =========================
 # 2. Modelo (ALINHADO COM HARDWARE)
 # =========================
 model = Sequential([
     Flatten(input_shape=(28, 28)),
-    Dense(10, activation='relu')  # 🔥 IMPORTANTE (igual ao hardware)
+    Dense(10, activation='relu')  # igual ao hardware
 ])
 
 model.compile(
@@ -42,8 +42,8 @@ print(bias)
 # =========================
 # 4. QUANTIZAÇÃO CORRETA
 # =========================
-# 🔥 Ajuste crítico: compensar entrada 0–255 do hardware
-SCALE = 127  # 🔥 CORRETO
+# 🔥 CORREÇÃO PRINCIPAL
+SCALE = 64
 
 weights_q = np.clip(weights * SCALE, -128, 127).astype(np.int8)
 bias_q = np.clip(bias * SCALE, -128, 127).astype(np.int8)
@@ -77,9 +77,9 @@ print("✅ Pesos e bias exportados com sucesso!")
 # =========================
 # 7. TESTE RÁPIDO NO PYTHON
 # =========================
-# só pra garantir que o modelo está funcionando
-
 idx = 10
+
+# 🔥 IMPORTANTE: usar mesma escala do hardware
 img = x_train[idx].reshape(1, 28, 28)
 
 pred = model.predict(img)

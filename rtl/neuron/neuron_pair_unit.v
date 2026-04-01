@@ -9,16 +9,31 @@ module neuron_pair_unit #(
     input start,
 
     output reg done,
-    output reg [7:0] result,
+
+    // 🔥 NOVO: scores reais dos dois neurônios
+    output reg [15:0] score0,
+    output reg [15:0] score1,
+
     output [3:0] state_debug
 );
 
     // =========================
-    // sinais internos
+    // START EDGE DETECT
     // =========================
+    reg start_d;
+    wire start_edge;
+
+    always @(posedge clk) begin
+        start_d <= start;
+    end
+
+    assign start_edge = start & ~start_d;
+
     reg start_pulse;
 
+    // =========================
     // entradas da NPU
+    // =========================
     reg [7:0] DA, DB, DC, DD;
 
     wire [7:0] D_OUT;
@@ -48,7 +63,6 @@ module neuron_pair_unit #(
         .data(input_data)
     );
 
-    // 🔥 agora parametrizado
     weight_memory #(.FILE(WFILE0)) W0 (
         .clk(clk),
         .addr(addr),
@@ -74,7 +88,7 @@ module neuron_pair_unit #(
         .DB(DB),
         .DC(DC),
         .DD(DD),
-        .BIAS_IN(bias0),
+        .BIAS_IN(bias0), // ⚠️ ainda único (limitação da sua NPU atual)
         .D_OUT(D_OUT),
         .FIFO_FULL(FIFO_FULL),
         .FIFO_EMPTY(FIFO_EMPTY),
@@ -111,6 +125,12 @@ module neuron_pair_unit #(
     end
 
     // =========================
+    // acumuladores (🔥 CORREÇÃO PRINCIPAL)
+    // =========================
+    reg [15:0] acc0;
+    reg [15:0] acc1;
+
+    // =========================
     // FSM (784 ciclos)
     // =========================
     reg [2:0] state;
@@ -127,16 +147,25 @@ module neuron_pair_unit #(
             addr <= 0;
             done <= 0;
             start_pulse <= 0;
-            result <= 0;
+
+            acc0 <= 0;
+            acc1 <= 0;
+
+            score0 <= 0;
+            score1 <= 0;
+
         end else begin
             case (state)
-
                 IDLE: begin
                     done <= 0;
                     start_pulse <= 0;
 
-                    if (start) begin
+                    if (start_edge) begin
                         addr <= 0;
+
+                        acc0 <= 0;
+                        acc1 <= 0;
+
                         state <= LOAD;
                     end
                 end
@@ -150,10 +179,16 @@ module neuron_pair_unit #(
                     start_pulse <= 0;
 
                     if (DONE) begin
+                        // 🔥 ACUMULA RESULTADO
+                        acc0 <= acc0 + D_OUT;
+
+                        // ⚠️ TEMPORÁRIO:
+                        // sua NPU só expõe 1 saída → duplicando
+                        acc1 <= acc1 + D_OUT;
+
                         state <= NEXT;
                     end
                 end
-
                 NEXT: begin
                     if (addr == 10'd783) begin
                         state <= DONE_STATE;
@@ -162,10 +197,13 @@ module neuron_pair_unit #(
                         state <= LOAD;
                     end
                 end
-
                 DONE_STATE: begin
                     done <= 1;
-                    result <= D_OUT;
+
+                    // 🔥 entrega scores finais
+                    score0 <= acc0;
+                    score1 <= acc1;
+
                     state <= IDLE;
                 end
 

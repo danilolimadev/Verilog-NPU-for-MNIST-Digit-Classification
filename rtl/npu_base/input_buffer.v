@@ -1,12 +1,12 @@
 module input_buffer (
-    input  CLKEXT, //clock
-    input  CLR_BUF_IN, //clear
-    input  EN_BUF_IN, //enable
-    input  [7:0] DA, DB, DC, DD, //entradas
-    output reg [7:0] QA, QB, QC, QD //saídas
+    input  CLKEXT,
+    input  CLR_BUF_IN,
+    input  EN_BUF_IN,
+    input  [7:0] DA, DB, DC, DD,
+    output reg [7:0] QA, QB, QC, QD
 );
 
-    always @(posedge CLKEXT or negedge CLR_BUF_IN) begin
+    always @(posedge CLKEXT or posedge CLR_BUF_IN) begin
         if (CLR_BUF_IN) begin
             QA <= 8'd0;
             QB <= 8'd0;

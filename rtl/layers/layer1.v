@@ -6,21 +6,29 @@ module layer1 (
     output reg done,
     output reg [4:0] pair_results,
 
-    // 🔥 NOVO: scores dos vencedores
-    output [15:0] score0,
-    output [15:0] score1,
-    output [15:0] score2,
-    output [15:0] score3,
-    output [15:0] score4
+    // 🔥 scores dos vencedores (já corretos)
+    output reg [15:0] score0,
+    output reg [15:0] score1,
+    output reg [15:0] score2,
+    output reg [15:0] score3,
+    output reg [15:0] score4
 );
 
     // =========================
-    // sinais dos 5 pares
+    // controle
     // =========================
     reg start_all;
 
+    // =========================
+    // sinais dos pares
+    // =========================
     wire done0, done1, done2, done3, done4;
-    wire [7:0] res0, res1, res2, res3, res4;
+
+    wire [15:0] s0a, s0b;
+    wire [15:0] s1a, s1b;
+    wire [15:0] s2a, s2b;
+    wire [15:0] s3a, s3b;
+    wire [15:0] s4a, s4b;
 
     // =========================
     // 5 pares (10 neurônios)
@@ -33,7 +41,9 @@ module layer1 (
         .BIAS_ID1(1)
     ) pair0 (
         .clk(clk), .rst(rst), .start(start_all),
-        .done(done0), .result(res0), .state_debug()
+        .done(done0),
+        .score0(s0a), .score1(s0b),
+        .state_debug()
     );
 
     neuron_pair_unit #(
@@ -43,7 +53,9 @@ module layer1 (
         .BIAS_ID1(3)
     ) pair1 (
         .clk(clk), .rst(rst), .start(start_all),
-        .done(done1), .result(res1), .state_debug()
+        .done(done1),
+        .score0(s1a), .score1(s1b),
+        .state_debug()
     );
 
     neuron_pair_unit #(
@@ -53,7 +65,9 @@ module layer1 (
         .BIAS_ID1(5)
     ) pair2 (
         .clk(clk), .rst(rst), .start(start_all),
-        .done(done2), .result(res2), .state_debug()
+        .done(done2),
+        .score0(s2a), .score1(s2b),
+        .state_debug()
     );
 
     neuron_pair_unit #(
@@ -63,7 +77,9 @@ module layer1 (
         .BIAS_ID1(7)
     ) pair3 (
         .clk(clk), .rst(rst), .start(start_all),
-        .done(done3), .result(res3), .state_debug()
+        .done(done3),
+        .score0(s3a), .score1(s3b),
+        .state_debug()
     );
 
     neuron_pair_unit #(
@@ -73,20 +89,13 @@ module layer1 (
         .BIAS_ID1(9)
     ) pair4 (
         .clk(clk), .rst(rst), .start(start_all),
-        .done(done4), .result(res4), .state_debug()
+        .done(done4),
+        .score0(s4a), .score1(s4b),
+        .state_debug()
     );
 
     // =========================
-    // 🔥 SCORES (IMPORTANTE)
-    // =========================
-    assign score0 = {8'd0, res0};
-    assign score1 = {8'd0, res1};
-    assign score2 = {8'd0, res2};
-    assign score3 = {8'd0, res3};
-    assign score4 = {8'd0, res4};
-
-    // =========================
-    // FSM simples
+    // FSM
     // =========================
     reg [1:0] state;
 
@@ -102,11 +111,16 @@ module layer1 (
             done <= 0;
             start_all <= 0;
             pair_results <= 0;
+
+            score0 <= 0;
+            score1 <= 0;
+            score2 <= 0;
+            score3 <= 0;
+            score4 <= 0;
         end
         else
         begin
             case (state)
-
                 IDLE:
                 begin
                     done <= 0;
@@ -125,19 +139,50 @@ module layer1 (
 
                     if (done0 && done1 && done2 && done3 && done4)
                     begin
-                        pair_results[0] <= res0[0];
-                        pair_results[1] <= res1[0];
-                        pair_results[2] <= res2[0];
-                        pair_results[3] <= res3[0];
-                        pair_results[4] <= res4[0];
+                        // 🔥 PAR 0 (0 vs 1)
+                        if (s0b > s0a) begin
+                            pair_results[0] <= 1;
+                            score0 <= s0b;
+                        end else begin
+                            pair_results[0] <= 0;
+                            score0 <= s0a;
+                        end
 
-                        $display("\n===== DEBUG LAYER1 =====");
-                        $display("res0 = %d", res0);
-                        $display("res1 = %d", res1);
-                        $display("res2 = %d", res2);
-                        $display("res3 = %d", res3);
-                        $display("res4 = %d", res4);
-                        $display("========================\n");
+                        // 🔥 PAR 1 (2 vs 3)
+                        if (s1b > s1a) begin
+                            pair_results[1] <= 1;
+                            score1 <= s1b;
+                        end else begin
+                            pair_results[1] <= 0;
+                            score1 <= s1a;
+                        end
+
+                        // 🔥 PAR 2 (4 vs 5)
+                        if (s2b > s2a) begin
+                            pair_results[2] <= 1;
+                            score2 <= s2b;
+                        end else begin
+                            pair_results[2] <= 0;
+                            score2 <= s2a;
+                        end
+
+                        // 🔥 PAR 3 (6 vs 7)
+                        if (s3b > s3a) begin
+                            pair_results[3] <= 1;
+                            score3 <= s3b;
+                        end else begin
+                            pair_results[3] <= 0;
+                            score3 <= s3a;
+                        end
+
+                        // 🔥 PAR 4 (8 vs 9)
+                        if (s4b > s4a) begin
+                            pair_results[4] <= 1;
+                            score4 <= s4b;
+                        end else begin
+                            pair_results[4] <= 0;
+                            score4 <= s4a;
+                        end
 
                         state <= DONE_STATE;
                     end

@@ -3,60 +3,74 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # =========================
-# ESCOLHA AQUI
-# =========================
-INDEX = 10  # 🔥 MUDE PARA TESTAR
-
-# =========================
 # CARREGAR MNIST
 # =========================
 (x_train, y_train), _ = mnist.load_data()
 
-img = x_train[INDEX]
-label = y_train[INDEX]
-
 print("===================================")
-print(f"Imagem escolhida: {INDEX}")
-print(f"Label real: {label}")
+print("Gerando inputs de 0 a 9")
 print("===================================")
 
 # =========================
-# NORMALIZAÇÃO CORRETA
+# LOOP PARA 0–9
 # =========================
-# 🔥 NÃO ESCALAR MAIS!
-img = img.astype(int)
+for digit in range(10):
 
-# =========================
-# DEBUG (CRÍTICO)
-# =========================
-print("Min pixel:", img.min())
-print("Max pixel:", img.max())
+    # pega um exemplo daquele dígito
+    idx = np.where(y_train == digit)[0][0]
 
-if img.max() <= 15:
-    print("❌ ERRO: imagem ainda está em escala 0–15")
-else:
-    print("✅ Escala correta (0–255)")
+    img = x_train[idx]
+    label = y_train[idx]
 
-# =========================
-# MOSTRAR IMAGEM (opcional)
-# =========================
-plt.imshow(img, cmap='gray')
-plt.title(f"Label: {label}")
-plt.show()
+    print("\n-----------------------------------")
+    print(f"Imagem escolhida: {idx}")
+    print(f"Label real: {label}")
+    print("-----------------------------------")
 
-# =========================
-# FLATTEN
-# =========================
-flat = img.flatten()
+    # =========================
+    # SEM NORMALIZAÇÃO (0–255)
+    # =========================
+    img = img.astype(int)
 
-print("\nPrimeiros 20 valores:")
-print(flat[:20])
+    # =========================
+    # DEBUG
+    # =========================
+    print("Min pixel:", img.min())
+    print("Max pixel:", img.max())
 
-# =========================
-# SALVAR .mem
-# =========================
-with open("../data/input.mem", "w") as f:
-    for val in flat:
-        f.write(f"{val:02x}\n")
+    if img.max() <= 15:
+        print("❌ ERRO: escala errada")
+    else:
+        print("✅ Escala correta (0–255)")
 
-print("\n✅ input.mem atualizado com sucesso!")
+    # =========================
+    # MOSTRAR IMAGEM (🔥 AGORA SEMPRE)
+    # =========================
+    plt.figure(figsize=(3,3))
+    plt.imshow(img, cmap='gray')
+    plt.title(f"Digit: {label} (idx={idx})")
+    plt.axis('off')
+    plt.show()
+
+    # =========================
+    # FLATTEN
+    # =========================
+    flat = img.flatten()
+
+    print("Primeiros 20 valores:")
+    print(flat[:20])
+
+    # =========================
+    # SALVAR .mem
+    # =========================
+    filename = f"../data/input_{digit}.mem"
+
+    with open(filename, "w") as f:
+        for val in flat:
+            f.write(f"{val:02x}\n")
+
+    print(f"✅ Arquivo salvo: input_{digit}.mem")
+
+print("\n===================================")
+print("TODOS OS INPUTS GERADOS COM SUCESSO")
+print("===================================")

@@ -6,14 +6,6 @@ module input_memory (
 
     reg [7:0] mem [0:1023];
 
-    /*initial begin
-        // exemplo simples (depois vem MNIST)
-        mem[0] = 1;
-        mem[1] = 2;
-        mem[2] = 3;
-        mem[3] = 4;
-    end*/
-
     initial begin
         $readmemh("E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/input.mem", mem); //TODO: PROVAVELMENTE VAI TER QUE COLOCAR O DEFINITIVO AQUI
     end

@@ -9,8 +9,6 @@ module tb_top_classifier;
     wire done;
     wire [3:0] digit;
 
-    integer cycle_count;
-
     top_classifier DUT (
         .clk(clk),
         .rst(rst),
@@ -19,69 +17,57 @@ module tb_top_classifier;
         .digit(digit)
     );
 
-    // =========================
-    // CLOCK
-    // =========================
     always #5 clk = ~clk;
 
-    // =========================
-    // CONTADOR DE CICLOS
-    // =========================
-    always @(posedge clk) begin
-        if (!rst && !done)
-            cycle_count <= cycle_count + 1;
+    task start_pulse;
+    begin
+        @(posedge clk);
+        start = 1;
+        @(posedge clk);
+        start = 0;
     end
+    endtask
 
-    // =========================
-    // MONITOR
-    // =========================
+    integer cycles;
+
     initial begin
-        $display("======================================");
-        $display(" TESTE CLASSIFICADOR MNIST (REAL)");
-        $display("======================================");
+        $display("\n===== TESTE TOP_CLASSIFIER =====");
 
-        /*$monitor("T=%0t | DONE=%b | DIGIT=%d | CYCLES=%d",
-                 $time, done, digit, cycle_count);*/
-    end
+        cycles = 0;
 
-    // =========================
-    // TESTE PRINCIPAL
-    // =========================
-    initial begin
-        cycle_count = 0;
+        // RESET
+        @(posedge clk);
+        rst = 0;
 
-        // reset
-        #20 rst = 0;
+        // START
+        start_pulse();
 
-        // start
-        #20 start = 1;
-        #10 start = 0;
-
-        // =========================
-        // ESPERA COM TIMEOUT
-        // =========================
-        while (!done && cycle_count < 1000000) begin
+        // ESPERA (tempo alto)
+        while (!done && cycles < 5000000) begin
             @(posedge clk);
+            cycles = cycles + 1;
+
+            if (cycles % 500000 == 0)
+                $display("... ciclos = %d", cycles);
         end
 
         if (!done) begin
-            $display("TIMEOUT ❌ - demorou demais");
-            $finish;
+            $display("FAIL: timeout");
+            $stop;
         end
-
-        #20;
 
         $display("\n==== RESULTADO FINAL ====");
         $display("Digit = %d", digit);
-        $display("Total ciclos = %d", cycle_count);
+        $display("Cycles = %d", cycles);
 
-        // validação básica
-        if (digit <= 9)
-            $display("PASS ✅ valor válido");
+        if (^digit === 1'bx)
+            $display("FAIL: digit X");
+        else if (digit <= 9)
+            $display("PASS");
         else
-            $display("FAIL ❌ valor inválido");
+            $display("FAIL: digit inválido");
 
-        $display("=========================\n");
+        $display("========================\n");
 
         #50 $stop;
     end
