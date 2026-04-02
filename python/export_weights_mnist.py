@@ -11,14 +11,13 @@ from tensorflow.keras.layers import Dense, Flatten
 x_train = x_train.astype(np.float32)
 
 # =========================
-# MODELO (SEM RELU)
+# MODELO
 # =========================
 model = Sequential([
     Flatten(input_shape=(28, 28)),
-    Dense(10, activation=None)  # logits
+    Dense(10, activation=None)
 ])
 
-# 🔥 CORREÇÃO CRÍTICA AQUI
 model.compile(
     optimizer='adam',
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
@@ -34,12 +33,21 @@ model.fit(x_train, y_train, epochs=5)
 weights, bias = model.layers[1].get_weights()
 
 # =========================
-# QUANTIZAÇÃO (MANTÉM)
+# 🔥 QUANTIZAÇÃO CORRETA
 # =========================
-SCALE = 32
+print("\nCalculando escala ótima...")
 
-weights_q = np.clip(weights * SCALE, -128, 127).astype(np.int8)
-bias_q = np.clip(bias * SCALE, -128, 127).astype(np.int8)
+w_max = np.max(np.abs(weights))
+b_max = np.max(np.abs(bias))
+
+SCALE_W = 127 / w_max
+SCALE_B = 127 / b_max
+
+print("Scale W:", SCALE_W)
+print("Scale B:", SCALE_B)
+
+weights_q = np.clip(weights * SCALE_W, -128, 127).astype(np.int8)
+bias_q = np.clip(bias * SCALE_B, -128, 127).astype(np.int8)
 
 # =========================
 # EXPORT
