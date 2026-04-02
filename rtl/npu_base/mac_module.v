@@ -28,19 +28,13 @@ module mac_module (
     // =========================
     always @(posedge CLKEXT or posedge RST_MAC) begin
         if (RST_MAC) begin
-            acc <= bias_ext;
+            acc <= bias_ext <<< 5;
+            Y   <= 0;
         end 
         else if (EN_MAC) begin
-            acc <= acc + mult_out;
+            acc <= acc + (mult_out >>> 5);
+            Y   <= acc >>> 6;
         end
-    end
-
-    // =========================
-    // CONVERSÃO PARA 16 BITS (🔥 CONTROLADA)
-    // =========================
-    always @(posedge CLKEXT) begin
-        // 👉 ajuste de escala (IMPORTANTE)
-        Y <= acc >>> 8;  // 🔥 combina com SCALE=64 (ou ajuste se necessário)
     end
 
 endmodule

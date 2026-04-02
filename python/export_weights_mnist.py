@@ -10,6 +10,9 @@ from tensorflow.keras.layers import Dense, Flatten
 (x_train, y_train), _ = mnist.load_data()
 x_train = x_train.astype(np.float32)
 
+# 🔥 NORMALIZAÇÃO (MUITO IMPORTANTE)
+x_train = x_train / 255.0
+
 # =========================
 # MODELO
 # =========================
@@ -33,21 +36,14 @@ model.fit(x_train, y_train, epochs=5)
 weights, bias = model.layers[1].get_weights()
 
 # =========================
-# 🔥 QUANTIZAÇÃO CORRETA
+# 🔥 QUANTIZAÇÃO CORRETA (ÚNICO SCALE)
 # =========================
-print("\nCalculando escala ótima...")
+SCALE = 8
 
-w_max = np.max(np.abs(weights))
-b_max = np.max(np.abs(bias))
+print("\nUsando SCALE =", SCALE)
 
-SCALE_W = 127 / w_max
-SCALE_B = 127 / b_max
-
-print("Scale W:", SCALE_W)
-print("Scale B:", SCALE_B)
-
-weights_q = np.clip(weights * SCALE_W, -128, 127).astype(np.int8)
-bias_q = np.clip(bias * SCALE_B, -128, 127).astype(np.int8)
+weights_q = np.clip(weights * SCALE, -128, 127).astype(np.int8)
+bias_q    = np.clip(bias * SCALE,   -128, 127).astype(np.int8)
 
 # =========================
 # EXPORT
@@ -70,5 +66,6 @@ idx = 10
 img = x_train[idx].reshape(1, 28, 28)
 
 pred = model.predict(img)
+
 print("Real:", y_train[idx])
 print("Pred:", np.argmax(pred))
