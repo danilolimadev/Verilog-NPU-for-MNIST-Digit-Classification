@@ -40,7 +40,7 @@ module mac_module (
     // =========================
     always @(posedge CLKEXT) begin
         // 👉 ajuste de escala (IMPORTANTE)
-        Y <= acc >>> 5;  // 🔥 combina com SCALE=64 (ou ajuste se necessário)
+        Y <= acc >>> 8;  // 🔥 combina com SCALE=64 (ou ajuste se necessário)
     end
 
 endmodule
