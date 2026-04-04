@@ -1,4 +1,4 @@
-module npu_fsm_top (
+module neuron_core (
     input  CLKEXT,
     input  RST_GLO,
     input  START,
@@ -7,7 +7,6 @@ module npu_fsm_top (
     input  [15:0] CON_SIG,
 
     input  [7:0] DA, DB, DC, DD,
-    input  [7:0] BIAS_IN,
 
     output [15:0] OUT0,
     output [15:0] OUT1,
@@ -66,20 +65,12 @@ module npu_fsm_top (
   // MAC
   // ==============================
   mac_module mac0 (
-    .CLKEXT(CLKEXT),
-    .EN_MAC(EN_MAC),
-    .RST_MAC(RST_MAC),
-    .BIAS_IN(BIAS_IN),
     .A(QA),
     .B(QB),
     .Y(MAC0_Y)
   );
 
   mac_module mac1 (
-    .CLKEXT(CLKEXT),
-    .EN_MAC(EN_MAC),
-    .RST_MAC(RST_MAC),
-    .BIAS_IN(BIAS_IN),
     .A(QC),
     .B(QD),
     .Y(MAC1_Y)
