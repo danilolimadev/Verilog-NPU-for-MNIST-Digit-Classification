@@ -7,7 +7,7 @@ module piso_out (
     input  wire [15:0] mac0_out,
     input  wire [15:0] mac1_out,
     output reg  [7:0]  D_OUT
-);
+  );
 
   reg [31:0] shift_reg;
 
