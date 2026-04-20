@@ -1,17 +1,17 @@
-module neuron_unit #(
-    parameter INPUT_FILE = "data/input_0.mem",
-    parameter WFILE = "data/weights_n0.mem",
-    parameter BIAS_ID = 0
-  )(
+module neuron_unit (
     input clk,
     input rst,
     input start,
+    input [7:0] input_data,
+    input [7:0] weight,
+    input [7:0] bias,
 
     output reg done,
+    output reg pixel_done,
     output reg signed [15:0] score,
 
     output [3:0] state_debug
-  );
+);
 
   // =========================
   // EDGE DETECT
@@ -27,55 +27,23 @@ module neuron_unit #(
   reg start_pulse;
 
   // =========================
-  // NPU IO (APENAS 1 CAMINHO)
+  // NPU CORE
   // =========================
   reg [7:0] DA, DB;
 
   wire DONE;
-
-  wire [7:0] bias;
-
-  reg [9:0] addr; //TODO: Colocar o addr pra sair(como out), ai vai dar pra usar pra pegar o weight de fora, mas deixa aqui controlando
-
-  wire [7:0] input_data;
-  wire [7:0] weight;
-
   wire signed [15:0] MAC_OUT;
 
-  // =========================
-  // MEMÓRIAS
-  // =========================
-  input_memory #(.INPUT_FILE(INPUT_FILE)) IM (
-                 .clk(clk),
-                 .addr(addr),
-                 .data(input_data)
-               );
-
-  weight_memory #(.FILE(WFILE)) W (
-                  .clk(clk),
-                  .addr(addr),
-                  .data(weight)
-                );
-
-  bias_memory BM (
-                .clk(clk),
-                .addr(BIAS_ID),
-                .data(bias)
-              );
-
-  // =========================
-  // NPU (USANDO SÓ 1 LADO)
-  // =========================
   neuron_core NCR (
-                .CLKEXT(clk),
-                .RST_GLO(rst),
-                .START(start_pulse),
-                .DA(DA),
-                .DB(DB),
-                .DONE(DONE),
-                .STATE_DEBUG(state_debug),
-                .MAC_OUT(MAC_OUT)
-              );
+    .CLKEXT(clk),
+    .RST_GLO(rst),
+    .START(start_pulse),
+    .DA(DA),
+    .DB(DB),
+    .DONE(DONE),
+    .STATE_DEBUG(state_debug),
+    .MAC_OUT(MAC_OUT)
+  );
 
   // =========================
   // INPUT PIPE
@@ -90,7 +58,7 @@ module neuron_unit #(
     else
     begin
       DA <= input_data;
-      DB <= weight; // se der problema: usar $signed(weight)
+      DB <= weight;
     end
   end
 
@@ -98,6 +66,9 @@ module neuron_unit #(
   // ACUMULADOR
   // =========================
   reg signed [31:0] acc;
+
+  // contador local
+  reg [9:0] count;
 
   // =========================
   // FSM
@@ -115,22 +86,27 @@ module neuron_unit #(
     if (rst)
     begin
       state <= IDLE;
-      addr <= 0;
       done <= 0;
+      pixel_done <= 0;
       start_pulse <= 0;
       acc <= 0;
       score <= 0;
+      count <= 0;
     end
     else
     begin
+      // default
+      pixel_done <= 0;
+
       case (state)
+
         IDLE:
         begin
           done <= 0;
           if (start_edge)
           begin
-            addr <= 0;
             acc <= 0;
+            count <= 0;
             state <= LOAD;
           end
         end
@@ -147,17 +123,18 @@ module neuron_unit #(
           if (DONE)
           begin
             acc <= acc + MAC_OUT;
+            pixel_done <= 1;
             state <= NEXT;
           end
         end
 
         NEXT:
         begin
-          if (addr == 10'd783)
+          if (count == 10'd783)
             state <= DONE_STATE;
           else
           begin
-            addr <= addr + 1;
+            count <= count + 1;
             state <= LOAD;
           end
         end
@@ -165,11 +142,12 @@ module neuron_unit #(
         DONE_STATE:
         begin
           done <= 1;
-          // bias no final
           score <= acc + $signed({{8{bias[7]}}, bias});
           state <= IDLE;
         end
+
       endcase
     end
   end
+
 endmodule
