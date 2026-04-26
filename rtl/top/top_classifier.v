@@ -1,31 +1,41 @@
-module top_classifier #(
-    parameter INPUT_FILE = "data/input_0.mem"
-)(
+module top_classifier (
     input clk,
     input rst,
     input start,
-
-    // AXI
+    // ============================================================
+    // CONFIGURAÇÃO (AXI-LIKE) → PESOS + BIAS
+    // ============================================================
+    input        cfg_valid,
+    input [3:0]  cfg_neuron,
+    input [9:0]  cfg_addr,
+    input [7:0]  cfg_weight,
+    input        cfg_is_bias,
+    // ============================================================
+    // AXI-STREAM INPUT → IMAGEM (784 pixels)
+    // ============================================================
     input  [7:0] s_axis_tdata,
     input        s_axis_tvalid,
     input        s_axis_tlast,
     output       s_axis_tready,
-
+    // ============================================================
+    // SAÍDA FINAL
+    // ============================================================
     output reg done,
     output reg [3:0] digit
 );
 
-  wire layer_done;
+  // ============================================================
+  // CONTROLE DO BUFFER DE ENTRADA (IMAGEM)
+  // ============================================================
+  reg [9:0] wr_ptr;        // ponteiro de escrita (0-783)
+  reg buffer_full;         // indica que a imagem foi carregada
 
-  // =========================
-  // BUFFER AXI (🔥 NOVO)
-  // =========================
-  reg [7:0] buffer [0:783];
-  reg [9:0] wr_ptr;
-  reg buffer_full;
+  // só aceita dados se não estiver cheio e não estiver configurando
+  assign s_axis_tready = !buffer_full && !cfg_valid;
 
-  assign s_axis_tready = !buffer_full;
-
+  // ============================================================
+  // ESCRITA DO BUFFER (AXI → RAM)
+  // ============================================================
   always @(posedge clk or posedge rst)
   begin
     if (rst)
@@ -37,9 +47,9 @@ module top_classifier #(
     begin
       if (s_axis_tvalid && s_axis_tready)
       begin
-        buffer[wr_ptr] <= s_axis_tdata;
         wr_ptr <= wr_ptr + 1;
 
+        // fim da imagem
         if (s_axis_tlast || wr_ptr == 10'd783)
         begin
           buffer_full <= 1;
@@ -49,28 +59,42 @@ module top_classifier #(
     end
   end
 
-  // =========================
-  // READ SIDE
-  // =========================
-  wire [9:0] addr;
-  wire [7:0] input_data;
+  // ============================================================
+  // BUFFER DE ENTRADA (RAM)
+  // ============================================================
+  wire [9:0] addr;         // endereço vindo do classifier_layer
+  wire [7:0] input_data;   // pixel atual
 
-  assign input_data = buffer[addr];
+  input_memory BUFFER (
+    .clk(clk),
 
-  // =========================
-  // START AUTOMÁTICO
-  // =========================
+    // WRITE (AXI)
+    .we(s_axis_tvalid && s_axis_tready),
+    .waddr(wr_ptr),
+    .wdata(s_axis_tdata),
+
+    // READ (PROCESSAMENTO)
+    .raddr(addr),
+    .rdata(input_data)
+  );
+
+  // ============================================================
+  // START AUTOMÁTICO (quando buffer cheio)
+  // ============================================================
   reg start_d;
   wire start_edge;
 
   always @(posedge clk)
     start_d <= buffer_full;
 
-  assign start_edge = buffer_full & ~start_d;
+  // dispara apenas quando termina de carregar e não está configurando
+  assign start_edge = buffer_full & ~start_d & ~cfg_valid;
 
-  // =========================
-  // EDGE DONE
-  // =========================
+  // ============================================================
+  // DETECÇÃO DE FINALIZAÇÃO DO LAYER
+  // ============================================================
+  wire layer_done;
+
   reg layer_done_d;
   wire layer_done_edge;
 
@@ -79,19 +103,35 @@ module top_classifier #(
 
   assign layer_done_edge = layer_done & ~layer_done_d;
 
-  // =========================
-  // LAYER
-  // =========================
+  // ============================================================
+  // SAÍDA DOS NEURÔNIOS
+  // ============================================================
   wire signed [15:0] n0,n1,n2,n3,n4;
   wire signed [15:0] n5,n6,n7,n8,n9;
 
+  // ============================================================
+  // CLASSIFIER LAYER
+  // ============================================================
   classifier_layer L1 (
     .clk(clk),
     .rst(rst),
     .start(start_edge),
+
+    // dados
     .input_data(input_data),
+
+    // configuração
+    .cfg_valid(cfg_valid),
+    .cfg_neuron(cfg_neuron),
+    .cfg_addr(cfg_addr),
+    .cfg_weight(cfg_weight),
+    .cfg_is_bias(cfg_is_bias),
+
+    // controle
     .addr(addr),
     .done(layer_done),
+
+    // outputs
     .n0(n0), .n1(n1),
     .n2(n2), .n3(n3),
     .n4(n4), .n5(n5),
@@ -99,15 +139,14 @@ module top_classifier #(
     .n8(n8), .n9(n9)
   );
 
-  // =========================
-  // FSM (INALTERADA)
-  // =========================
+  // ============================================================
+  // FSM DE DECISÃO (ARGMAX)
+  // ============================================================
+  localparam IDLE       = 2'd0,
+             COMPARE   = 2'd1,
+             DONE_STATE = 2'd2;
+
   reg [1:0] state;
-
-  parameter IDLE = 0,
-            COMPARE = 1,
-            DONE_STATE = 2;
-
   reg [3:0] idx;
   reg signed [15:0] max_val;
 
@@ -124,10 +163,13 @@ module top_classifier #(
     else
     begin
       case (state)
-
+        // ======================================================
+        // ESPERA RESULTADO DO LAYER
+        // ======================================================
         IDLE:
         begin
           done <= 0;
+
           if (layer_done_edge)
           begin
             max_val <= n0;
@@ -137,6 +179,9 @@ module top_classifier #(
           end
         end
 
+        // ======================================================
+        // ARGMAX (comparação dos 10 neurônios)
+        // ======================================================
         COMPARE:
         begin
           case (idx)
@@ -157,10 +202,16 @@ module top_classifier #(
             idx <= idx + 1;
         end
 
+        // ======================================================
+        // FINALIZAÇÃO
+        // ======================================================
         DONE_STATE:
         begin
           done <= 1;
-          buffer_full <= 0; // 🔥 libera próximo frame
+
+          // libera para próxima imagem
+          buffer_full <= 0;
+
           state <= IDLE;
         end
 
@@ -168,12 +219,13 @@ module top_classifier #(
     end
   end
 
-  //DEBUG
+  // ============================================================
+  // DEBUG (PROGRESSO)
+  // ============================================================
   reg [9:0] last_addr;
+
   always @(posedge clk)
-  begin
     last_addr <= addr;
-  end
 
   always @(posedge clk)
   begin

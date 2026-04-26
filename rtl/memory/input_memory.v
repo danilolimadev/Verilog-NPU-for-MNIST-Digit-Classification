@@ -1,21 +1,27 @@
 module input_memory #(
-    parameter INPUT_FILE = "data/input_0.mem"
-  )(
+    parameter DEPTH = 784,
+    parameter DATA_WIDTH = 8
+)(
     input clk,
-    input [9:0] addr,
-    output reg [7:0] data
-  );
-  reg [7:0] mem [0:1023];
 
-  initial
-  begin
-    $display("Loading input file: %s", INPUT_FILE);
-    $readmemh(INPUT_FILE, mem);
-  end
+    // WRITE (AXI)
+    input        we,
+    input [9:0]  waddr,
+    input [7:0]  wdata,
+
+    // READ (PROCESSAMENTO)
+    input [9:0]  raddr,
+    output reg [7:0] rdata
+);
+
+  reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
 
   always @(posedge clk)
   begin
-    data <= mem[addr];
+    if (we)
+      mem[waddr] <= wdata;
+
+    rdata <= mem[raddr];
   end
 
 endmodule

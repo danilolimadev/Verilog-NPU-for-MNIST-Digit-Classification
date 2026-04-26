@@ -1,18 +1,29 @@
 module weight_memory #(
-    parameter FILE = "E:/Disco Local E/Projeto/CI Digital/verilog-npu-mnist/data/weights.mem"
-  )(
+    parameter DEPTH = 784,
+    parameter DATA_WIDTH = 8
+)(
     input clk,
-    input [9:0] addr,
-    output reg [7:0] data
-  );
-  reg [7:0] mem [0:1023];
 
-  initial
-  begin
-    $readmemh(FILE, mem);
-  end
+    // write (cfg)
+    input        we,
+    input [9:0]  waddr,
+    input [7:0]  wdata,
+
+    // read (inference)
+    input [9:0]  raddr,
+    output reg [7:0] rdata
+);
+
+  reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
 
   always @(posedge clk)
-    data <= mem[addr];
+  begin
+    // write
+    if (we)
+      mem[waddr] <= wdata;
+
+    // read
+    rdata <= mem[raddr];
+  end
 
 endmodule
