@@ -94,25 +94,6 @@ module axi_mnist #(
         .digit(mnist_digit)
     );
 
-    always @(posedge clk or negedge resetn)
-    begin
-        if (!resetn)
-        begin
-            // nada
-        end
-        else
-        begin
-            if (mnist_done)
-            begin
-                $display("\n====================================");
-                $display("[SOC_TOP] MNIST DONE!");
-                $display("[SOC_TOP] DIGITO PREDITO = %0d", mnist_digit);
-                $display("[SOC_TOP] TIME = %0t", $time);
-                $display("====================================\n");
-            end
-        end
-    end
-
     // =====================================================
     // AXI FSM
     // =====================================================
@@ -234,12 +215,6 @@ module axi_mnist #(
                     begin
                         pixel_data  <= s_axi_wdata[7:0];
                         pixel_valid <= 1'b1;
-
-                        /*$display(
-                            "[AXI_MNIST] PIXEL RECEBIDO -> %0d time=%0t",
-                            s_axi_wdata[7:0],
-                            $time
-                        );*/
                     end
 
                     // =================================
@@ -314,18 +289,6 @@ module axi_mnist #(
             // READ RESPONSE
             if (s_axi_rvalid && s_axi_rready)
                 s_axi_rvalid <= 1'b0;
-
-            // =========================================
-            // DONE DEBUG
-            // =========================================
-            /*if (done)
-            begin
-                $display(
-                    "\n[AXI_MNIST] DONE -> DIGIT = %0d time=%0t\n",
-                    digit,
-                    $time
-                );
-            end*/
         end
     end
 

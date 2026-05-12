@@ -291,32 +291,12 @@ module soc_tb;
     $display("[TB] Firmware carregado com sucesso!");
     $display("[TB] CPU iniciando execução...\n");
 
-    // tempo para CPU subir
-    #3000000;
-
-    // =====================================
-    // TESTES ANTIGOS
-    // =====================================
-
-    send_and_log("A", 8'h41, 100000);
-    send_and_log("B", 8'h42, 1300000);
-    send_and_log("C", 8'h43, 200000);
-    send_and_log("D", 8'h44, 200000);
-    send_and_log("E", 8'h45, 200000);
-
-    // =====================================
-    // TESTE AXI_MNIST
-    // =====================================
-
+    wait(mnist_done);
     $display("\n====================================");
-    $display("[TB] TESTE AXI_MNIST");
-    $display("====================================");
-
-    // comando UART 'M'
-    send_and_log("M", 8'h4D, 5000000);
-
-    // espera processamento
-    #3000000;
+    $display("[SOC_TOP] MNIST DONE!");
+    $display("[SOC_TOP] DIGITO PREDITO = %0d", mnist_digit);
+    $display("====================================\n");
+    #500000;
 
     $display("\n====================================");
     $display("[TB] Teste finalizado.");
