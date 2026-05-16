@@ -200,7 +200,7 @@ const uint8_t mnist_input[784] = {
 
 int main(void)
 {
-    GPIO_OUT = 0x04;
+    GPIO_OUT = 0xAA;
     int i;
     uint32_t result;
 

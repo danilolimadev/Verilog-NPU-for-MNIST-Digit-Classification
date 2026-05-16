@@ -71,6 +71,8 @@ module axi_mnist #(
 
     wire      pixel_ready;
 
+    reg already_done = 0;
+
     // =====================================================
     // TOP CLASSIFIER
     // =====================================================
@@ -94,6 +96,10 @@ module axi_mnist #(
         .digit(mnist_digit)
     );
 
+    always @(posedge mnist_done)
+    begin
+        already_done <= 1;
+    end
     // =====================================================
     // AXI FSM
     // =====================================================
@@ -123,6 +129,8 @@ module axi_mnist #(
             pixel_data    <= 0;
             pixel_valid   <= 0;
             pixel_last    <= 0;
+
+            already_done  <= 0;
         end
         else
         begin
@@ -259,7 +267,7 @@ module axi_mnist #(
                     // =================================
                     8'h04:
                     begin
-                        s_axi_rdata <= {31'b0, mnist_done};
+                        s_axi_rdata <= {31'b0, already_done};
                     end
 
                     // =================================
