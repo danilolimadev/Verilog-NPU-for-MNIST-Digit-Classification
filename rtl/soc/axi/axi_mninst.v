@@ -276,12 +276,6 @@ module axi_mnist #(
                     8'h08:
                     begin
                         s_axi_rdata <= {28'b0, mnist_digit};
-
-                        $display(
-                            "[AXI_MNIST] RESULT LIDO -> digit=%0d time=%0t",
-                            mnist_digit,
-                            $time
-                        );
                     end
 
                     default:

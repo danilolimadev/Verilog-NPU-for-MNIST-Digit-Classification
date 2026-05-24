@@ -9,7 +9,7 @@
 module bootloader_uart #(
     parameter CLK_FREQ      = 50_000_000,
     parameter BAUD_RATE     = 115200,
-    parameter MEM_WORDS     = 256,          // quantidade de palavras 32-bit
+    parameter MEM_WORDS     = 512,          // quantidade de palavras 32-bit
     parameter FIRMWARE_FILE = "firmware.hex"
   )(
     input  wire clk,
